@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Radiology Report Template Converter</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="topbar">
+  <h1>Radiology Report Template Converter</h1>
+  <p class="tagline">Convert report templates between PowerScribe One (XML), PowerScribe 360 (RTF), and IHE&nbsp;MRRT (HTML) — in any direction. Everything runs in your browser; nothing is uploaded.</p>
+</header>
+
+<main>
+  <section class="controls">
+    <div class="control">
+      <label for="inFormat">Input format</label>
+      <select id="inFormat"></select>
+      <span id="detected" class="hint"></span>
+    </div>
+    <div class="arrow">→</div>
+    <div class="control">
+      <label for="outFormat">Output format</label>
+      <select id="outFormat"></select>
+    </div>
+    <div class="control file">
+      <label for="fileInput">Load file</label>
+      <input type="file" id="fileInput" accept=".xml,.rtf,.html,.htm,.txt">
+    </div>
+    <div id="templatePicker" class="control" style="display:none">
+      <label for="templateSelect">Template</label>
+      <select id="templateSelect"></select>
+    </div>
+  </section>
+
+  <p id="status" class="status"></p>
+
+  <section class="panes">
+    <div class="pane">
+      <div class="pane-head"><h2>Input</h2><button id="clearBtn" class="ghost">Clear</button></div>
+      <textarea id="inputText" spellcheck="false" placeholder="Paste your template here, or drag a file anywhere onto the page…"></textarea>
+    </div>
+    <div class="pane">
+      <div class="pane-head">
+        <h2>Output</h2>
+        <span class="btns">
+          <button id="copyBtn" class="ghost">Copy</button>
+          <button id="downloadBtn" disabled>Download</button>
+        </span>
+      </div>
+      <textarea id="output" spellcheck="false" readonly></textarea>
+    </div>
+  </section>
+
+  <section class="pane preview-pane">
+    <div class="pane-head"><h2>Rendered text preview</h2></div>
+    <pre id="preview" class="preview">(empty)</pre>
+  </section>
+</main>
+
+<footer>
+  <p>Field types: <b>1</b> free-text · <b>2</b> measurement · <b>3</b> pick list · <b>4</b> merge field.
+  Conversions to/from MRRT and plain text are lossy by nature (merge-field IDs and some styling are not representable). See the README for details.</p>
+</footer>
+
+<script src="js/converter.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
