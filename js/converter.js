@@ -448,6 +448,122 @@
     };
   }
 
+  // --- Rad AI Reporting : Slate.js content array (JSON) ---------------------
+  // Rad AI templates are a Slate document tree (a JSON array of block nodes with
+  // inline field nodes and text leaves) rather than flat text + offsets. We map
+  // its node types onto the same IR. Only structural/format mechanics are
+  // handled here (not clinical formula recipes).
+  //
+  // Data-field formulas <-> merge fields (the cross-platform-meaningful subset):
+  var DATA_FORMULA_TO_MERGE = {
+    'reason()': { name: 'Reason For Study', mergeId: '507' },
+    'procedureDescription()': { name: 'Procedures', mergeId: '802' }
+  };
+  var MERGE_TO_DATA_FORMULA = {
+    'Reason For Study': 'reason()',
+    'Procedures': 'procedureDescription()',
+    'Accession Number': 'accession()',
+    'Patient Name': 'fullName(patient())',
+    'Study Date': 'studyDate()'
+  };
+
+  function parseRadai(input, name) {
+    var data = JSON.parse(input);
+    var content = Array.isArray(data) ? data : ((data && data.content) || []);
+    var title = (!Array.isArray(data) && (data.title || data.name)) || name || 'Converted Template';
+    var nodes = [];
+    walkRadaiBlocks(content, nodes);
+    return [{ name: title, nodes: nodes, meta: {} }];
+  }
+
+  function walkRadaiBlocks(blocks, nodes) {
+    blocks.forEach(function (blk, i) {
+      if (i > 0) nodes.push({ kind: 'text', text: '\n' });
+      walkRadaiBlock(blk, nodes);
+    });
+  }
+
+  function walkRadaiBlock(blk, nodes) {
+    var t = blk.type;
+    if (t === 'numbered-list' || t === 'bulleted-list' || t === 'ol' || t === 'ul') {
+      var ordered = (t === 'numbered-list' || t === 'ol');
+      (blk.children || []).forEach(function (li, idx) {
+        if (idx > 0) nodes.push({ kind: 'text', text: '\n' });
+        nodes.push({ kind: 'text', text: ordered ? (idx + 1) + '. ' : '- ' });
+        (li.children || []).forEach(function (c) { radaiInline(c, nodes); });
+      });
+      return;
+    }
+    if (t === 'section' || t === 'impression-zone') {
+      walkRadaiBlocks(blk.children || [], nodes);
+      return;
+    }
+    // paragraph (no type) / headings / anything else: inline children
+    (blk.children || []).forEach(function (c) { radaiInline(c, nodes); });
+  }
+
+  function radaiInline(node, nodes) {
+    if (node.text !== undefined) {
+      if (node.text) nodes.push({ kind: 'text', text: node.text });
+      return;
+    }
+    var t = node.type;
+    if (t === 'input') { nodes.push({ kind: 'field', field: radaiInputToField(node) }); return; }
+    if (t === 'select' || t === 'select-block') { nodes.push({ kind: 'field', field: radaiSelectToField(node) }); return; }
+    if (t === 'observation-input') {
+      nodes.push({ kind: 'field', field: mkField(2, node.name || '', { value: node.templateDefaultValue || node.name || '' }) });
+      return;
+    }
+    if (t === 'observation-select') {
+      nodes.push({ kind: 'field', field: mkField(3, node.name || '', { choices: [] }) });
+      return;
+    }
+    if (t === 'fragment') {
+      nodes.push({ kind: 'field', field: mkField(1, node.name || 'fragment', { value: node.name || '' }) });
+      return;
+    }
+    if (node.children) node.children.forEach(function (c) { radaiInline(c, nodes); });
+  }
+
+  function mkField(type, nm, extra) {
+    var f = {
+      type: type, name: nm, value: null, valueDefaultAttr: null, defaultValue: null,
+      choices: [], props: {}, mergeId: null, mergeName: null
+    };
+    for (var k in extra) f[k] = extra[k];
+    return f;
+  }
+
+  function radaiInputToField(node) {
+    var formula = node.formula;
+    var defText = (node.children && node.children[0] && node.children[0].text) || '';
+    if (formula && DATA_FORMULA_TO_MERGE[formula]) {
+      var m = DATA_FORMULA_TO_MERGE[formula];
+      return mkField(4, m.name, { value: m.name, mergeId: m.mergeId, mergeName: '' });
+    }
+    if (formula) {
+      // other data/formula field: keep the expression so it survives a round-trip
+      return mkField(2, node.name || '', { value: node.name || '', radaiFormula: formula });
+    }
+    return mkField(1, node.name || '', {
+      value: node.name || '',
+      defaultValue: (defText && defText !== node.name) ? defText : (defText || null)
+    });
+  }
+
+  function radaiSelectToField(node) {
+    var choices = [], def = null;
+    (node.options || []).forEach(function (o) {
+      var text = typeof o.value === 'string' ? o.value : (o.name || '');
+      choices.push({ name: o.name || '', text: text, autotextId: null, autotextName: null });
+      if (o.default && def == null) def = text;
+    });
+    return mkField(3, node.name || '', {
+      choices: choices,
+      defaultValue: def != null ? def : (choices[0] ? choices[0].text : null)
+    });
+  }
+
   // --- plain text (very loose; treats whole thing as literal) ---------------
   function parseText(txt, name) {
     return [{ name: name || 'Converted Template', nodes: [{ kind: 'text', text: txt }], meta: {} }];
@@ -774,6 +890,56 @@
     return '<input type="text" name="' + escXml(f.name) + '" value="' + escXml(val) + '">';
   }
 
+  // --- Rad AI Reporting : Slate.js content array (JSON) ---------------------
+  function serializeRadai(t) {
+    var paras = toParagraphs(t.nodes);
+    var blocks = [];
+    paras.forEach(function (runs) {
+      if (runs.length === 0) { blocks.push({ children: [{ text: '' }] }); return; }
+      var children = [];
+      runs.forEach(function (run) {
+        if (run.kind === 'text') { children.push({ text: run.text }); }
+        else { children.push(fieldToRadai(run.field)); }
+      });
+      // Slate invariant: children must start AND end with a text leaf.
+      if (children.length === 0 || children[0].text === undefined) children.unshift({ text: '' });
+      if (children[children.length - 1].text === undefined) children.push({ text: '' });
+      blocks.push({ children: children });
+    });
+    if (blocks.length === 0) blocks.push({ children: [{ text: '' }] });
+    return JSON.stringify(blocks, null, 2);
+  }
+
+  function fieldToRadai(f) {
+    if (f.type === 3) {
+      var di = defaultChoiceIndex(f);
+      return {
+        type: 'select', name: f.name || '',
+        options: f.choices.map(function (c, i) {
+          var o = {
+            name: (c.name !== undefined && c.name !== '') ? c.name : (c.text || ''),
+            value: c.text || ''
+          };
+          if (i === di) o.default = true;
+          return o;
+        }),
+        children: [{ text: '' }]
+      };
+    }
+    if (f.type === 4) {
+      return {
+        type: 'input', name: f.name || '',
+        formula: MERGE_TO_DATA_FORMULA[f.name] || 'reason()',
+        children: [{ text: '' }]
+      };
+    }
+    if (f.type === 2 && f.radaiFormula) {
+      return { type: 'input', name: f.name || '', formula: f.radaiFormula, children: [{ text: '' }] };
+    }
+    var def = f.defaultValue != null ? f.defaultValue : (f.value != null ? f.value : f.name);
+    return { type: 'input', name: f.name || '', children: [{ text: def || '' }] };
+  }
+
   // ===========================================================================
   // Registry / autodetect / public API
   // ===========================================================================
@@ -782,6 +948,7 @@
     psone: { label: 'PowerScribe One (XML)', ext: 'xml', mime: 'application/xml', parse: parsePsOne, serialize: serializePsOne },
     ps360: { label: 'PowerScribe 360 (RTF)', ext: 'rtf', mime: 'application/rtf', parse: parsePs360, serialize: serializePs360 },
     mrrt: { label: 'MRRT (HTML)', ext: 'html', mime: 'text/html', parse: parseMrrt, serialize: serializeMrrt },
+    radai: { label: 'Rad AI (Slate JSON)', ext: 'json', mime: 'application/json', parse: parseRadai, serialize: serializeRadai },
     text: { label: 'Plain text', ext: 'txt', mime: 'text/plain', parse: parseText, serialize: serializeText }
   };
 
@@ -790,6 +957,7 @@
     if (/<PortalAutoTextExport/i.test(head)) return 'psone';
     if (/^\s*{\\rtf/.test(head)) return 'ps360';
     if (/<html[\s>]/i.test(head) || /<section[\s>]/i.test(head) || /<!doctype html/i.test(head)) return 'mrrt';
+    if (/^\s*[\[{]/.test(head) && /"children"\s*:/.test(head)) return 'radai';
     return 'text';
   }
 

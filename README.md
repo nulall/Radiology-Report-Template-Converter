@@ -12,6 +12,7 @@ browser, which makes it safe to host as a static site (e.g. GitHub Pages).
 | `psone` | Nuance **PowerScribe One**     | `.xml` (`PortalAutoTextExport`) | ✅ | ✅ |
 | `ps360` | Nuance **PowerScribe 360**     | `.rtf` (RichEdit + embedded `{\xml}`) | ✅ | ✅ |
 | `mrrt`  | IHE **MRRT** report template   | `.html`       | ✅ | ✅ |
+| `radai` | **Rad AI Reporting**           | `.json` (Slate content array) | ✅ | ✅ |
 | `text`  | Plain text (preview / generic) | `.txt`        | ✅ | ✅ |
 
 Because every format is parsed into one shared intermediate representation (IR)
@@ -61,6 +62,15 @@ on its token.
   major report heading (`EXAMINATION`, `FINDINGS`, `IMPRESSION`) start a new
   `<section>`. The output is valid MRRT but won't be byte-identical to a
   specific vendor's exporter.
+- **Rad AI** is a Slate.js document *tree* (blocks + inline field nodes), not
+  flat text with offsets, but it maps onto the same model: free-text `input` ↔
+  type 1, data-formula `input` (`reason()`, `procedureDescription()`) ↔ merge
+  fields, `select`/`select-block` ↔ pick lists. Rad AI-only constructs
+  (`impression-zone`, `fragment`, `observation-*`, recommendations, arbitrary
+  formula fields, audio/`src` marks) have no PowerScribe/MRRT equivalent and are
+  dropped on the way out / absent on the way in. Paste the generated JSON into
+  the Rad AI editor via **right-click → Paste from JSON** (and produce input for
+  this tool via **Copy as JSON**).
 - **Plain text** is a one-way-ish preview: it keeps the text and field tokens
   but not field metadata.
 
@@ -88,7 +98,7 @@ python3 -m http.server 3000
 
 No build step is required.
 
-## Adding another platform (e.g. RadAI, Fluency, etc.)
+## Adding another platform (e.g. Fluency, etc.)
 
 The architecture is pluggable. To add a format, register it in
 `js/converter.js`:
@@ -108,10 +118,10 @@ A parser turns the platform's file into IR templates (`nodes` is a flat list of
 IR template back into that platform's file. Reuse the existing helpers
 (`fieldToken`, `toParagraphs`, `buildFieldXml`, etc.).
 
-> **RadAI / other vendors:** these aren't included yet because their template
-> *file* formats aren't publicly documented (RadAI in particular is an
-> AI-assisted reporting layer rather than a fixed template-interchange file).
-> Provide a sample export and the format can be added against the same IR.
+> **Other vendors:** support depends on having a sample of the platform's
+> template *file* format. Provide a sample export and the format can be added
+> against the same IR. (Rad AI's Slate JSON is already supported — see the
+> `radai` entry in `js/converter.js`.)
 
 ## File layout
 
