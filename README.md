@@ -3,7 +3,13 @@
 A zero-install, browser-only tool that converts radiology **report templates**
 (a.k.a. AutoText / report templates) between dictation-platform file formats —
 in **any direction**. Everything runs client-side, so no PHI ever leaves the
-browser, which makes it safe to host as a static site (e.g. GitHub Pages).
+browser.
+
+## ▶ Use it
+
+**[Open the converter →](https://nulall.github.io/Radiology-Report-Template-Converter/)**
+
+No install, no sign-in — it runs entirely in your browser.
 
 ## Supported formats
 
@@ -21,7 +27,7 @@ and every output is generated from that IR, all combinations work
 
 ## How to use
 
-1. Open `index.html` (locally or via the hosted GitHub Pages URL).
+1. Open the [hosted converter](https://nulall.github.io/Radiology-Report-Template-Converter/).
 2. Paste a template into the **Input** box, **Load** a file, or drag a file
    anywhere onto the page.
 3. Leave **Input format** on *Auto-detect* (or set it explicitly).
@@ -76,27 +82,6 @@ on its token.
 
 PowerScribe One ↔ PowerScribe 360 conversions preserve field types, choices,
 defaults, and custom properties.
-
-## Running locally
-
-It's a static site — any web server works. Two easy options:
-
-```bash
-# Python (no dependencies)
-python3 -m http.server 3000
-# then open http://localhost:3000/
-```
-
-> Opening `index.html` directly via `file://` works too, since you paste or
-> drag in your own content rather than fetching anything.
-
-## Deploying to GitHub Pages
-
-1. Create a repo and push these files.
-2. In **Settings → Pages**, set the source to your default branch, root (`/`).
-3. Your converter will be live at `https://<user>.github.io/<repo>/`.
-
-No build step is required.
 
 ## Adding another platform (e.g. Fluency, etc.)
 
