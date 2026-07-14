@@ -28,15 +28,23 @@ and every output is generated from that IR, all combinations work
 ## How to use
 
 1. Open the [hosted converter](https://nulall.github.io/Radiology-Report-Template-Converter/).
-2. Paste a template into the **Input** box, **Load** a file, or drag a file
-   anywhere onto the page.
+2. Paste a template into the **Input** box, **Choose files…**, or drag one or
+   more files anywhere onto the page.
 3. Leave **Input format** on *Auto-detect* (or set it explicitly).
-4. Choose your **Output format**.
+4. Choose your **Output format** (defaults to PowerScribe 360).
 5. **Copy** or **Download** the result.
 
-If the input file contains multiple templates (PowerScribe One exports often
-bundle a main template plus add-ons), a **Template** picker appears so you can
-choose which one to convert.
+Downloaded files are named `<template>_<FORMAT>.<ext>` (e.g.
+`Chest CT_PS360.rtf`), so converted files are easy to spot and never collide
+with the source file they came from.
+
+### Bulk conversion
+
+Select (or drag in) **multiple files at once** — each file's format is
+auto-detected independently, and every template found is listed in the
+**Template** picker (PowerScribe One exports that bundle several AutoTexts are
+expanded too). **Download all** converts every loaded template to the chosen
+output format and saves them as a single ZIP.
 
 ## How the conversion works
 
@@ -115,4 +123,5 @@ index.html          # the app
 styles.css
 js/converter.js     # parsers + serializers + IR (the engine)
 js/app.js           # UI wiring
+js/zip.js           # minimal ZIP writer for bulk "Download all"
 ```

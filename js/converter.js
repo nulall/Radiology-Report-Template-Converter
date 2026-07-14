@@ -944,12 +944,14 @@
   // Registry / autodetect / public API
   // ===========================================================================
 
+  // `tag` is appended to generated file names (e.g. "Chest CT_PS360.rtf") so
+  // converted files are obviously converted and never collide with the source.
   var FORMATS = {
-    psone: { label: 'PowerScribe One (XML)', ext: 'xml', mime: 'application/xml', parse: parsePsOne, serialize: serializePsOne },
-    ps360: { label: 'PowerScribe 360 (RTF)', ext: 'rtf', mime: 'application/rtf', parse: parsePs360, serialize: serializePs360 },
-    mrrt: { label: 'MRRT (HTML)', ext: 'html', mime: 'text/html', parse: parseMrrt, serialize: serializeMrrt },
-    radai: { label: 'Rad AI (Slate JSON)', ext: 'json', mime: 'application/json', parse: parseRadai, serialize: serializeRadai },
-    text: { label: 'Plain text', ext: 'txt', mime: 'text/plain', parse: parseText, serialize: serializeText }
+    psone: { label: 'PowerScribe One (XML)', ext: 'xml', mime: 'application/xml', tag: 'PSOne', parse: parsePsOne, serialize: serializePsOne },
+    ps360: { label: 'PowerScribe 360 (RTF)', ext: 'rtf', mime: 'application/rtf', tag: 'PS360', parse: parsePs360, serialize: serializePs360 },
+    mrrt: { label: 'MRRT (HTML)', ext: 'html', mime: 'text/html', tag: 'MRRT', parse: parseMrrt, serialize: serializeMrrt },
+    radai: { label: 'Rad AI (Slate JSON)', ext: 'json', mime: 'application/json', tag: 'RadAI', parse: parseRadai, serialize: serializeRadai },
+    text: { label: 'Plain text', ext: 'txt', mime: 'text/plain', tag: 'TXT', parse: parseText, serialize: serializeText }
   };
 
   function detectFormat(s) {
