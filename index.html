@@ -25,8 +25,10 @@
       <select id="outFormat"></select>
     </div>
     <div class="control file">
-      <label for="fileInput">Load file</label>
-      <input type="file" id="fileInput" accept=".xml,.rtf,.html,.htm,.txt">
+      <label for="browseBtn">Load file(s)</label>
+      <button id="browseBtn" type="button" class="ghost">Choose files…</button>
+      <input type="file" id="fileInput" multiple hidden
+             accept=".xml,.rtf,.html,.htm,.txt,.json,application/xml,text/xml,application/rtf,text/rtf,text/html,text/plain,application/json">
     </div>
     <div id="templatePicker" class="control" style="display:none">
       <label for="templateSelect">Template</label>
@@ -39,7 +41,7 @@
   <section class="panes">
     <div class="pane">
       <div class="pane-head"><h2>Input</h2><button id="clearBtn" class="ghost">Clear</button></div>
-      <textarea id="inputText" spellcheck="false" placeholder="Paste your template here, or drag a file anywhere onto the page…"></textarea>
+      <textarea id="inputText" spellcheck="false" placeholder="Paste your template here, or drag one or more files anywhere onto the page…"></textarea>
     </div>
     <div class="pane">
       <div class="pane-head">
@@ -47,6 +49,7 @@
         <span class="btns">
           <button id="copyBtn" class="ghost">Copy</button>
           <button id="downloadBtn" disabled>Download</button>
+          <button id="downloadAllBtn" style="display:none">Download all</button>
         </span>
       </div>
       <textarea id="output" spellcheck="false" readonly></textarea>
@@ -65,6 +68,7 @@
 </footer>
 
 <script src="js/converter.js"></script>
+<script src="js/zip.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>
